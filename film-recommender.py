@@ -42,10 +42,28 @@ def genres_one_hot_encoding(movies, set_of_genres):
 def extract_year(movies):
     movies["year"]=movies["title"].str[-5:-1]
     movies=movies[movies["year"].str.isnumeric()]
+    movies["year"]=movies["year"].astype(int)
+    return movies
+
+def make_pivot_table(movies):
+    movies_pivot = movies.pivot_table(index="title", columns=["userId"], values="rating")
+    movies_pivot.fillna(0, inplace=True)
+    return movies_pivot
+
+def sum_genres(movies, movies_pivot):
+    for j in range(6,6+number_of_genres):
+        new_df=pd.DataFrame(movies.groupby("title")[movies.columns[j]].sum())
+        movies_pivot=new_df.merge(movies_pivot, on="title")
+    return movies_pivot
+
 
 
 just_movies, movies_with_ratings = load_data_files()
 fewer_movies = narrowing_the_field(movies_with_ratings)
 set_of_genres, number_of_genres = create_set_of_genres(fewer_movies)
 movies_with_genres=genres_one_hot_encoding(fewer_movies, set_of_genres)
-print(movies_with_genres)
+fewer_movies=extract_year(fewer_movies)
+movies_pivot=make_pivot_table(fewer_movies)
+movies_pivot_with_genres=sum_genres(fewer_movies, movies_pivot)
+
+print(movies_pivot_with_genres.head())
