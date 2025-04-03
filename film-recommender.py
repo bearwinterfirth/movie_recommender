@@ -73,11 +73,19 @@ def five_films(matrix, movie_title, sim_score, movies):
     index=np.where(matrix.index==movie_title)[0][0]
     similar_movies=sorted(list(enumerate(sim_score[index])), key=lambda x: x[1], reverse=True)[1:6]
     
+    # list_of_films=[]
+    # for index, j in similar_movies:
+    #     movie=[]
+    #     movie_df = movies[movies["title"]==matrix.index[index]]
+    #     movie.extend(movie_df["title"].values)
+    #     list_of_films.append(movie)
+    # return list_of_films
+
     list_of_films=[]
     for index, j in similar_movies:
-        movie=[]
+        
         movie_df = movies[movies["title"]==matrix.index[index]]
-        movie.extend(movie_df["title"].values)
+        movie=movie_df["title"].values
         list_of_films.append(movie)
     return list_of_films
 
@@ -94,7 +102,7 @@ movies_pivot=make_pivot_table(fewer_movies)
 movies_pivot_with_genres=sum_genres(fewer_movies, movies_pivot)
 movies_pivot_with_genres_and_year=extract_year(movies_pivot_with_genres)
 sim_score=scaling(movies_pivot_with_genres_and_year)
-result=five_films(movies_pivot_with_genres_and_year, "Titanic (1997)", sim_score, just_movies)
+result=five_films(movies_pivot_with_genres_and_year, "Interstellar (2014)", sim_score, just_movies)
 
 
 print(result)
