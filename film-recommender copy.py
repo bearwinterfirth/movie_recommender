@@ -6,18 +6,16 @@ import numpy as np
 def load_data_files():
     movies = pd.read_csv("../moviedata/movies.csv")
     ratings = pd.read_csv("../moviedata/ratings.csv")
-    tags = pd.read_csv("../moviedata/tags.csv")
     movies.drop_duplicates("title", inplace=True)
     merged = ratings.merge(movies, on="movieId")
     merged.dropna(inplace=True)
-    return movies, merged, tags
-
+    return movies, merged
 
 def narrowing_the_field(movies):
-    movies=movies[movies["timestamp"]%2==0]
+    movies=movies[movies["timestamp"]%10==0]
     
     x = movies.groupby("userId").count()
-    x = x[(x["rating"]>80) & (x["rating"]<130)]
+    x = x[(x["rating"]>80) & (x["rating"]<200)]
     everyday_users=x.index
     movies_eu = movies[movies["userId"].isin(everyday_users)]
 
@@ -28,7 +26,6 @@ def narrowing_the_field(movies):
 
     return movies_eu_pf
 
-
 def create_set_of_genres(movies):
     set_of_genres=set()
     for j in movies.index:
@@ -37,36 +34,21 @@ def create_set_of_genres(movies):
             set_of_genres.add(word)
     return set_of_genres, len(set_of_genres)
 
-
 def genres_one_hot_encoding(movies, set_of_genres):
     for k in set_of_genres:
         movies[k]=np.where(movies["genres"].str.contains(k),1,0)
     return movies
 
+# def extract_year(movies):
+#     movies["year"]=movies["title"].str[-5:-1]
+#     movies=movies[movies["year"].str.isnumeric()]
+#     movies["year"]=movies["year"].astype(int)
+#     return movies
 
 def make_pivot_table(movies):
     movies_pivot = movies.pivot_table(index="title", columns=["userId"], values="rating")
     movies_pivot.fillna(0, inplace=True)
     return movies_pivot
-
-
-def shorten_taglist(tags):
-    x = tags.groupby("tag").count()
-    x = x[x["movieId"]>1000]
-    common_tags=x.index
-    short_taglist = tags[tags["tag"].isin(common_tags)]
-
-    short_taglist.drop(columns=["userId", "timestamp"], inplace=True)
-    short_taglist["ones"]=1
-    return short_taglist
-
-
-def make_pivot_table_of_tags(taglist):
-    tag_pivot = taglist.pivot_table(index="movieId", columns="tag", values="ones", aggfunc="sum")
-
-    tag_pivot.fillna(0, inplace=True)
-    return tag_pivot
-
 
 def sum_genres(movies, movies_pivot):
     for j in range(6,6+number_of_genres):
@@ -111,14 +93,12 @@ def five_films(matrix, movie_title, sim_score, movies):
 
 
 
-just_movies, movies_with_ratings, tags = load_data_files()
+just_movies, movies_with_ratings = load_data_files()
 fewer_movies = narrowing_the_field(movies_with_ratings)
 set_of_genres, number_of_genres = create_set_of_genres(fewer_movies)
 movies_with_genres=genres_one_hot_encoding(fewer_movies, set_of_genres)
 # fewer_movies=extract_year(fewer_movies)
 movies_pivot=make_pivot_table(fewer_movies)
-shorter_taglist=shorten_taglist(tags)
-tag_pivot=make_pivot_table_of_tags(shorter_taglist)
 movies_pivot_with_genres=sum_genres(fewer_movies, movies_pivot)
 movies_pivot_with_genres_and_year=extract_year(movies_pivot_with_genres)
 sim_score=scaling(movies_pivot_with_genres_and_year)
