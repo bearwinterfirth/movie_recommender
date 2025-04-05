@@ -4,22 +4,33 @@ from sklearn.metrics.pairwise import cosine_similarity
 import numpy as np
 
 def load_data_files():
+    '''loading 3 datasets:
+    movies.csv with columns movieId, titles, genres
+    ratings.csv with columns userId, movieId, ratings, timestamp
+    tags.csv with userId, movieId, tag, timestamp
+    '''
     movies = pd.read_csv("../moviedata/movies.csv")
     ratings = pd.read_csv("../moviedata/ratings.csv")
     tags = pd.read_csv("../moviedata/tags.csv")
+    
+    # drop duplicate movies
     movies.drop_duplicates("title", inplace=True)
+
+    # connect movie titles with ratings by merging datasets, also saving movies dataset for future cross-references
     merged = ratings.merge(movies, on="movieId")
     merged.dropna(inplace=True)
     return movies, merged, tags
 
 
-def narrowing_the_field(movies):
-    movies=movies[movies["timestamp"]%2==0]
+def narrowing_the_field(movies_with_ratings):
+    '''the dataset is too big to handle, som narrowing it down in a few ways'''
+    # cuting the whole dataset roughly in half by dropping odd timestamps. this still keeps almost all movies and users. 
+    movies_with_ratings=movies_with_ratings[movies_with_ratings["timestamp"]%2==0]
     
     x = movies.groupby("userId").count()
     x = x[(x["rating"]>80) & (x["rating"]<130)]
     everyday_users=x.index
-    movies_eu = movies[movies["userId"].isin(everyday_users)]
+    movies_eu = movies_with_ratings[movies_with_ratings["userId"].isin(everyday_users)]
 
     x = movies_eu.groupby("title").count()
     x = x[(x["rating"]>200)]
@@ -61,11 +72,20 @@ def shorten_taglist(tags):
     return short_taglist
 
 
-def make_pivot_table_of_tags(taglist):
+def merge_tags_with_movies(taglist, movies, movies_pivot):
     tag_pivot = taglist.pivot_table(index="movieId", columns="tag", values="ones", aggfunc="sum")
 
     tag_pivot.fillna(0, inplace=True)
-    return tag_pivot
+    movies_with_tags=movies.merge(tag_pivot, on="movieId")
+    three_merged_dfs=movies_pivot.merge(movies_with_tags, on="title")
+    return three_merged_dfs
+
+
+def merge_genres_with_movies(movies_pivot, titles_and_genres):
+    titles_and_genres=merged_xu_pf.drop(columns=["userId", "rating"])
+    titles_and_genres.drop_duplicates(subset="title", inplace=True)
+    design_matrix=design_matrix.merge(titles_and_genres, on="title")
+    design_matrix.set_index("title", inplace=True)
 
 
 def sum_genres(movies, movies_pivot):
@@ -113,15 +133,20 @@ def five_films(matrix, movie_title, sim_score, movies):
 
 just_movies, movies_with_ratings, tags = load_data_files()
 fewer_movies = narrowing_the_field(movies_with_ratings)
+
 set_of_genres, number_of_genres = create_set_of_genres(fewer_movies)
 movies_with_genres=genres_one_hot_encoding(fewer_movies, set_of_genres)
 # fewer_movies=extract_year(fewer_movies)
+
 movies_pivot=make_pivot_table(fewer_movies)
 shorter_taglist=shorten_taglist(tags)
-tag_pivot=make_pivot_table_of_tags(shorter_taglist)
+
+movies_pivot=merge_tags_with_movies(shorter_taglist, just_movies, movies_pivot)
 movies_pivot_with_genres=sum_genres(fewer_movies, movies_pivot)
+
 movies_pivot_with_genres_and_year=extract_year(movies_pivot_with_genres)
 sim_score=scaling(movies_pivot_with_genres_and_year)
+
 result=five_films(movies_pivot_with_genres_and_year, "Interstellar (2014)", sim_score, just_movies)
 
 
