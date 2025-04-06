@@ -72,9 +72,9 @@ def genres_one_hot_encoding(movies, set_of_genres):
     return movies
 
 
-def make_pivot_table(movies_with_rating):
+def make_pivot_table(movies_with_ratings):
     '''making a pivot table out of movies/ratings, with movie title as index. this will be the design matrix.'''
-    movies_pivot = movies.pivot_table(index="title", columns=["userId"], values="rating")
+    movies_pivot = movies_with_ratings.pivot_table(index="title", columns=["userId"], values="rating")
     movies_pivot.fillna(0, inplace=True)
     return movies_pivot
 
@@ -121,6 +121,7 @@ def merge_movies_pivot_with_genres(movies_pivot_with_tags, movies_with_genres):
 def extract_year(df):
     '''almost all movie titles end with year within parentheses. we extract them and make them a separate column.
     after this, the design matrix has columns for user ratings, tags, genres and year, and is indexed by movie title'''
+    df.set_index("title", inplace=True)
     df["year"]=df.index.str[-5:-1]
     df=df[df["year"].str.isnumeric()]   # dropping a few exceptions, that didn't follow the common scheme
     df["year"]=df["year"].astype(int)   # formatting the year column as numerics
