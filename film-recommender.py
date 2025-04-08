@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.metrics.pairwise import cosine_similarity
+from sklearn.decomposition import PCA
+from sklearn.neighbors import KNeighborsClassifier
 
 def load_data_files():
     '''loading 3 datasets:
@@ -127,6 +129,7 @@ def extract_year(df):
     df["year"]=df["year"].astype(int)   # formatting the year column as numerics
     return df
 
+
 def scaling(df):
     '''lots of different ranges among columns, so scaling and normalizing.
     also, ratings tend to be on the higher end of the scale, so scaling definitely needed.'''
@@ -138,30 +141,36 @@ def scaling(df):
     # it is important that zero means zero, therefore normalizing with minmaxscaler
     scaler = MinMaxScaler()
     df_scaled_normal = scaler.fit_transform(df_scaled)
+    return df_scaled_normal
 
-    # using cosine similarity for comparing films
-    sim_score = cosine_similarity(df_scaled_normal)
+
+def principal_component_analysis(df):
+    '''reducing the number of columns to 1000'''
+    pca = PCA(n_components=1000)
+    df=pca.fit_transform(df)
+    return df
+
+
+def similarity(df):
+    '''every film gets a similarity score compared to other films'''
+    sim_score = cosine_similarity(df)
     return sim_score
 
+
 def five_films(matrix, movie_title, sim_score, movies):
+    '''selecting the five films with the highest similarity score'''
     index=np.where(matrix.index==movie_title)[0][0]
     similar_movies=sorted(list(enumerate(sim_score[index])), key=lambda x: x[1], reverse=True)[1:6]
     
-    # list_of_films=[]
-    # for index, j in similar_movies:
-    #     movie=[]
-    #     movie_df = movies[movies["title"]==matrix.index[index]]
-    #     movie.extend(movie_df["title"].values)
-    #     list_of_films.append(movie)
-    # return list_of_films
-
     list_of_films=[]
     for index, j in similar_movies:
-        
+        movie=[]
         movie_df = movies[movies["title"]==matrix.index[index]]
-        movie=movie_df["title"].values
+        movie.extend(movie_df["title"].values)
         list_of_films.append(movie)
     return list_of_films
+
+
 
 
 
@@ -180,9 +189,11 @@ movies_pivot_with_tags=merge_movies_pivot_with_tags(short_taglist, movies, movie
 movies_pivot_with_tags_and_genres=merge_movies_pivot_with_genres(movies_pivot_with_tags, movies_with_genres)
 
 movies_pivot_with_tags_genres_and_year=extract_year(movies_pivot_with_tags_and_genres)
-sim_score=scaling(movies_pivot_with_tags_genres_and_year)
+scaled_df=scaling(movies_pivot_with_tags_genres_and_year)
+reduced_scaled_df=principal_component_analysis(scaled_df)
 
-result=five_films(movies_pivot_with_tags_genres_and_year, "Interstellar (2014)", sim_score, movies)
+sim_score=similarity(scaled_df)
+result=five_films(movies_pivot_with_tags_genres_and_year, "Titanic (1997)", sim_score, movies)
 
 
 print(result)
