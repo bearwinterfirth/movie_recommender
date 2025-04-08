@@ -173,9 +173,6 @@ def five_films(matrix, movie_title, sim_score, movies):
 
 
 
-
-
-
 movies, movies_with_ratings, tags = load_data_files()
 movies_with_ratings = narrowing_the_field(movies_with_ratings)
 
@@ -190,10 +187,20 @@ movies_pivot_with_tags_and_genres=merge_movies_pivot_with_genres(movies_pivot_wi
 
 movies_pivot_with_tags_genres_and_year=extract_year(movies_pivot_with_tags_and_genres)
 scaled_df=scaling(movies_pivot_with_tags_genres_and_year)
+
 reduced_scaled_df=principal_component_analysis(scaled_df)
-
-sim_score=similarity(scaled_df)
-result=five_films(movies_pivot_with_tags_genres_and_year, "Titanic (1997)", sim_score, movies)
+sim_score=similarity(reduced_scaled_df)
 
 
-print(result)
+
+while True:
+    film=str(input("Skriv en filmtitel, följt av dess\nårtal inom parentes. T.ex. 'Titanic (1997)'"))
+    if film=="q":
+        break
+    if (movies["title"] == film).any():
+        result=five_films(movies_pivot_with_tags_genres_and_year, film, sim_score, movies)
+        print(result)
+    else:
+        print("Försök igen!")
+
+print("Bye-bye")
