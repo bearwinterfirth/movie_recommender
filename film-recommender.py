@@ -24,6 +24,43 @@ def load_data_files():
     return movies, merged, tags
 
 
+def create_set_of_genres(movies):
+    '''genres are separated by '|' in movie dataset.
+    creating a set of all unique genres
+    '''
+    set_of_genres=set()
+    for j in movies.index:
+        short_list_of_genres=movies["genres"][j].split("|")
+        for word in short_list_of_genres:
+            set_of_genres.add(word)
+    return set_of_genres, len(set_of_genres)
+
+
+def genres_one_hot_encoding(movies, set_of_genres):
+    '''creating a column for each genre, with a '1' if the film has that genre'''
+    for k in set_of_genres:
+        movies[k]=np.where(movies["genres"].str.contains(k),1,0)
+    movies.drop(columns="genres", inplace=True)
+    return movies
+
+
+def make_shorter_taglist(tags):
+    '''there are over 150 000 different tags in the taglist.
+    dropping tags that have been used less than 1000 times.
+    '''
+    x = tags.groupby("tag").count()
+    x = x[x["movieId"]>1000]
+    common_tags=x.index
+    short_taglist = tags[tags["tag"].isin(common_tags)]
+
+    # drop redundant columns
+    short_taglist.drop(columns=["userId", "timestamp"], inplace=True)
+
+    # filling a column with ones for easier adding later
+    short_taglist["ones"]=1
+    return short_taglist
+
+
 def narrowing_the_field(movies_with_ratings):
     '''the dataset is too big to handle, som narrowing it down in a few ways
     - cutting the whole dataset roughly in half using timestamps (timestamps will not be
@@ -54,48 +91,11 @@ def narrowing_the_field(movies_with_ratings):
     return movies_eu_pf
 
 
-def create_set_of_genres(movies):
-    '''genres are separated by '|' in movie dataset.
-    creating a set of all unique genres
-    '''
-    set_of_genres=set()
-    for j in movies.index:
-        short_list_of_genres=movies["genres"][j].split("|")
-        for word in short_list_of_genres:
-            set_of_genres.add(word)
-    return set_of_genres, len(set_of_genres)
-
-
-def genres_one_hot_encoding(movies, set_of_genres):
-    '''creating a column for each genre, with a '1' if the film has that genre'''
-    for k in set_of_genres:
-        movies[k]=np.where(movies["genres"].str.contains(k),1,0)
-    movies.drop(columns="genres", inplace=True)
-    return movies
-
-
 def make_pivot_table(movies_with_ratings):
     '''making a pivot table out of movies/ratings, with movie title as index. this will be the design matrix.'''
     movies_pivot = movies_with_ratings.pivot_table(index="title", columns=["userId"], values="rating")
     movies_pivot.fillna(0, inplace=True)
     return movies_pivot
-
-
-def make_shorter_taglist(tags):
-    '''there are over 150 000 different tags in the taglist.
-    dropping tags that have been used less than 1000 times.
-    '''
-    x = tags.groupby("tag").count()
-    x = x[x["movieId"]>1000]
-    common_tags=x.index
-    short_taglist = tags[tags["tag"].isin(common_tags)]
-
-    # drop redundant columns
-    short_taglist.drop(columns=["userId", "timestamp"], inplace=True)
-
-    # filling a column with ones for easier adding later
-    short_taglist["ones"]=1
-    return short_taglist
 
 
 def merge_movies_pivot_with_tags(taglist, movies, movies_pivot):
@@ -157,35 +157,39 @@ def similarity(df):
     return sim_score
 
 
-def five_films(matrix, movie_title, sim_score, movies):
+def five_films(df, movie_title, sim_score, movies):
     '''selecting the five films with the highest similarity score'''
-    index=np.where(matrix.index==movie_title)[0][0]
+    index=np.where(df.index==movie_title)[0][0]
     similar_movies=sorted(list(enumerate(sim_score[index])), key=lambda x: x[1], reverse=True)[1:6]
-    
     list_of_films=[]
     for index, j in similar_movies:
-        movie=[]
-        movie_df = movies[movies["title"]==matrix.index[index]]
-        movie.extend(movie_df["title"].values)
+        movie_df = movies[movies["title"]==df.index[index]]
+        movie=movie_df["title"].values
         list_of_films.append(movie)
     return list_of_films
 
-
+    # for index, j in similar_movies:
+        
+    #     movie_df = movies[movies["title"]==matrix.index[index]]
+    #     movie=movie_df["title"].values
+    #     list_of_films.append(movie)
+    # return list_of_films
 
 
 movies, movies_with_ratings, tags = load_data_files()
-movies_with_ratings = narrowing_the_field(movies_with_ratings)
 
 set_of_genres, number_of_genres = create_set_of_genres(movies)
 movies_with_genres=genres_one_hot_encoding(movies, set_of_genres)
 
-movies_pivot=make_pivot_table(movies_with_ratings)
 short_taglist=make_shorter_taglist(tags)
 
+movies_with_ratings = narrowing_the_field(movies_with_ratings)
+
+movies_pivot=make_pivot_table(movies_with_ratings)
 movies_pivot_with_tags=merge_movies_pivot_with_tags(short_taglist, movies, movies_pivot)
 movies_pivot_with_tags_and_genres=merge_movies_pivot_with_genres(movies_pivot_with_tags, movies_with_genres)
-
 movies_pivot_with_tags_genres_and_year=extract_year(movies_pivot_with_tags_and_genres)
+
 scaled_df=scaling(movies_pivot_with_tags_genres_and_year)
 
 reduced_scaled_df=principal_component_analysis(scaled_df)
@@ -194,13 +198,15 @@ sim_score=similarity(reduced_scaled_df)
 
 
 while True:
-    film=str(input("Skriv en filmtitel, följt av dess\nårtal inom parentes. T.ex. 'Titanic (1997)'"))
+    film=str(input("\nSkriv en filmtitel, följt av dess årtal\ninom parentes. T.ex. 'Titanic (1997)'\neller q för att avsluta. "))
     if film=="q":
         break
     if (movies["title"] == film).any():
         result=five_films(movies_pivot_with_tags_genres_and_year, film, sim_score, movies)
-        print(result)
+        print("\nFem filmer som du nog gillar är:")
+        for j in result:
+            print(j[0])
     else:
-        print("Försök igen!")
+        print("Tyvärr finns det ingen sådan film i registret. Har du stavat fel, eller angett fel årtal?")
 
-print("Bye-bye")
+print("Tack för din medverkan!")
