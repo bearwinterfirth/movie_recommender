@@ -75,15 +75,15 @@ def narrowing_the_field(movies_with_ratings):
     # dropping columns: movieId, genres, timestamp before making pivot table
     movies_with_ratings.drop(columns=["movieId", "genres", "timestamp"], inplace=True)
     
-    # keeping only users with between 80 and 130 ratings, referred to as 'everyday users'
+    # keeping only users with between 80 and 120 ratings, referred to as 'everyday users'
     x = movies_with_ratings.groupby("userId").count()
-    x = x[(x["rating"]>80) & (x["rating"]<130)]
+    x = x[(x["rating"]>80) & (x["rating"]<120)]
     everyday_users=x.index
     movies_eu = movies_with_ratings[movies_with_ratings["userId"].isin(everyday_users)]
 
-    # keeping only movies with more than 200 ratings, thereby dropping unknown movies
+    # keeping only movies with more than 100 ratings, thereby dropping unknown movies
     x = movies_eu.groupby("title").count()
-    x = x[(x["rating"]>200)]
+    x = x[(x["rating"]>100)]
     popular_films=x.index
     movies_eu_pf = movies_eu[movies_eu["title"].isin(popular_films)]
 
@@ -183,9 +183,9 @@ movies_with_genres=genres_one_hot_encoding(movies, set_of_genres)
 
 short_taglist=make_shorter_taglist(tags)
 
-movies_with_ratings = narrowing_the_field(movies_with_ratings)
+short_movie_list = narrowing_the_field(movies_with_ratings)
 
-movies_pivot=make_pivot_table(movies_with_ratings)
+movies_pivot=make_pivot_table(short_movie_list)
 movies_pivot_with_tags=merge_movies_pivot_with_tags(short_taglist, movies, movies_pivot)
 movies_pivot_with_tags_and_genres=merge_movies_pivot_with_genres(movies_pivot_with_tags, movies_with_genres)
 movies_pivot_with_tags_genres_and_year=extract_year(movies_pivot_with_tags_and_genres)
@@ -201,7 +201,7 @@ while True:
     film=str(input("\nSkriv en filmtitel, följt av dess årtal\ninom parentes. T.ex. 'Titanic (1997)'\neller q för att avsluta. "))
     if film=="q":
         break
-    if (movies["title"] == film).any():
+    if (short_movie_list["title"] == film).any():
         result=five_films(movies_pivot_with_tags_genres_and_year, film, sim_score, movies)
         print("\nFem filmer som du nog gillar är:")
         for j in result:
