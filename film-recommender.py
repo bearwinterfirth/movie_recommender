@@ -138,10 +138,7 @@ def scaling(df):
     scaler = StandardScaler(with_mean=True, with_std=True)
     df_scaled = scaler.fit_transform(df)
     
-    # it is important that zero means zero, therefore normalizing with minmaxscaler
-    scaler = MinMaxScaler()
-    df_scaled_normal = scaler.fit_transform(df_scaled)
-    return df_scaled_normal
+    return df_scaled
 
 
 def principal_component_analysis(df):
