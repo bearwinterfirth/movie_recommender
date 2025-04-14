@@ -1,9 +1,9 @@
 import pandas as pd
 import numpy as np
-from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.decomposition import PCA
-from sklearn.neighbors import KNeighborsClassifier
+
 
 def load_data_files():
     '''loading 3 datasets:
@@ -165,30 +165,21 @@ def five_films(df, movie_title, sim_score, movies):
         list_of_films.append(movie)
     return list_of_films
 
-    # for index, j in similar_movies:
-        
-    #     movie_df = movies[movies["title"]==matrix.index[index]]
-    #     movie=movie_df["title"].values
-    #     list_of_films.append(movie)
-    # return list_of_films
 
 
 movies, movies_with_ratings, tags = load_data_files()
-
 set_of_genres, number_of_genres = create_set_of_genres(movies)
 movies_with_genres=genres_one_hot_encoding(movies, set_of_genres)
 
 short_taglist=make_shorter_taglist(tags)
-
 short_movie_list = narrowing_the_field(movies_with_ratings)
-
 movies_pivot=make_pivot_table(short_movie_list)
+
 movies_pivot_with_tags=merge_movies_pivot_with_tags(short_taglist, movies, movies_pivot)
 movies_pivot_with_tags_and_genres=merge_movies_pivot_with_genres(movies_pivot_with_tags, movies_with_genres)
 movies_pivot_with_tags_genres_and_year=extract_year(movies_pivot_with_tags_and_genres)
 
 scaled_df=scaling(movies_pivot_with_tags_genres_and_year)
-
 reduced_scaled_df=principal_component_analysis(scaled_df)
 sim_score=similarity(reduced_scaled_df)
 
