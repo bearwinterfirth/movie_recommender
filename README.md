@@ -43,4 +43,9 @@ Värdena i designmatrisen var av många olika slag; betyg upp till 5 (där de h�
 Med tanke på att många av kolumnerna i designmatrisen innehåller samma eller liknande information (användare har betygsatt lika; genres och tags överensstämmer, etc.) så beslöts att minska dimensionaliteten genom att göra en *principalkomponentanalys* (PCA). Efter att ha analyserat kolumnerna med hjälp av *pca.explained_variance_ratio_* beslöts att antalet kolumner kunde minskas från drygt 1900 till 1000, utan alltför stora informationsförluster (ca 0.85 på *explained variance ratio*).
 
 #### Likhet mellan filmer
-För att jämföra filmerna på ett inte alltför tidskrävande sätt, och hitta de filmer som mest liknar varje given film, valdes att använda *cosine_similarity*. Resultatet blev alltså en kvadratisk matris där varje film fick ett värde mellan 0 och 1 som mått på hur lik den är varje annan film. I funktionen *five_films* valdes de fem filmer ut som fått mest poäng (med undantag för den egna filmen, som förstås fick det maximala likhetsvärdet 1). Det var endast denna sista funktion som anropades varje gång användaren ville testa en "ny" film.
+För att jämföra filmerna på ett inte alltför tidskrävande sätt, och hitta de filmer som mest liknar varje given film, valdes att använda *cosine_similarity*. Resultatet blev alltså en kvadratisk matris där varje film fick ett värde mellan 0 och 1 som mått på hur lik den är varje annan film. I funktionen *five_films* valdes de fem filmer ut som fått mest poäng (med undantag för den egna filmen, som förstås fick det maximala likhetsvärdet 1). 
+
+Det är endast denna sista funktion som anropas varje gång användaren vill testa en "ny" film.
+
+
+*Observera att filerna med dataseten är för stora för att ladda upp till github. För att köra applikationen behöver därför sökvägarna till filerna ändras från de nuvarande "lokala" sökvägarna.*

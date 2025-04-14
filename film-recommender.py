@@ -62,12 +62,12 @@ def make_shorter_taglist(tags):
 
 
 def narrowing_the_field(movies_with_ratings):
-    '''the dataset is too big to handle, som narrowing it down in a few ways
+    '''the dataset is too big to handle, so narrowing it down in a few ways
     - cutting the whole dataset roughly in half using timestamps (timestamps will not be
     used for anything else after this)
     - don't want ratings from people who rated only a few movies, and also not ratings from 'professional
-    raters', but simply 'everyday users', so keeping users with between 80 and 130 ratings
-    - only interested in well-known films, so dropping films with less than 200 ratings
+    raters', but simply 'everyday users', so keeping users with between 80 and 120 ratings
+    - only interested in well-known films, so dropping films with less than 100 ratings
     '''
     # cuting the whole dataset roughly in half by dropping odd timestamps. this still keeps almost all movies and users. 
     movies_with_ratings=movies_with_ratings[movies_with_ratings["timestamp"]%2==0]
@@ -131,8 +131,9 @@ def extract_year(df):
 
 
 def scaling(df):
-    '''lots of different ranges among columns, so scaling and normalizing.
-    also, ratings tend to be on the higher end of the scale, so scaling definitely needed.'''
+    '''lots of different ranges among columns, so standardizing data.
+    Also, ratings tend to be on the higher end of the scale, so standardizing definitely needed.
+    '''
     df.columns = df.columns.astype(str)
 
     scaler = StandardScaler(with_mean=True, with_std=True)
@@ -142,7 +143,9 @@ def scaling(df):
 
 
 def principal_component_analysis(df):
-    '''reducing the number of columns to 1000'''
+    '''reducing the number of columns to 1000. 
+    (checked this with pca.explained_variance_ratio_ and 1000 is a good number)
+    '''
     pca = PCA(n_components=1000)
     df=pca.fit_transform(df)
     return df
@@ -166,25 +169,26 @@ def five_films(df, movie_title, sim_score, movies):
     return list_of_films
 
 
-
+'''This part runs just once'''
 movies, movies_with_ratings, tags = load_data_files()
 set_of_genres, number_of_genres = create_set_of_genres(movies)
-movies_with_genres=genres_one_hot_encoding(movies, set_of_genres)
+movies_with_genres = genres_one_hot_encoding(movies, set_of_genres)
 
-short_taglist=make_shorter_taglist(tags)
+short_taglist = make_shorter_taglist(tags)
 short_movie_list = narrowing_the_field(movies_with_ratings)
-movies_pivot=make_pivot_table(short_movie_list)
+movies_pivot = make_pivot_table(short_movie_list)
 
-movies_pivot_with_tags=merge_movies_pivot_with_tags(short_taglist, movies, movies_pivot)
-movies_pivot_with_tags_and_genres=merge_movies_pivot_with_genres(movies_pivot_with_tags, movies_with_genres)
-movies_pivot_with_tags_genres_and_year=extract_year(movies_pivot_with_tags_and_genres)
+movies_pivot_with_tags = merge_movies_pivot_with_tags(short_taglist, movies, movies_pivot)
+movies_pivot_with_tags_and_genres = merge_movies_pivot_with_genres(movies_pivot_with_tags, movies_with_genres)
+movies_pivot_with_tags_genres_and_year = extract_year(movies_pivot_with_tags_and_genres)
 
-scaled_df=scaling(movies_pivot_with_tags_genres_and_year)
-reduced_scaled_df=principal_component_analysis(scaled_df)
-sim_score=similarity(reduced_scaled_df)
+scaled_df = scaling(movies_pivot_with_tags_genres_and_year)
+reduced_scaled_df = principal_component_analysis(scaled_df)
+sim_score = similarity(reduced_scaled_df)
+'''End of part that runs just once'''
 
 
-
+'''This part runs as long as the user likes'''
 while True:
     film=str(input("\nSkriv en filmtitel, följt av dess årtal\ninom parentes. T.ex. 'Titanic (1997)'\neller q för att avsluta. "))
     if film=="q":
@@ -198,3 +202,4 @@ while True:
         print("Tyvärr finns det ingen sådan film i registret. Har du stavat fel, eller angett fel årtal?")
 
 print("Tack för din medverkan!")
+
