@@ -1,8 +1,10 @@
 import pandas as pd
 import numpy as np
+import re
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.decomposition import PCA
+
 
 
 def load_data_files():
@@ -11,12 +13,15 @@ def load_data_files():
     ratings.csv with columns  userId,  movieId, ratings, timestamp
     tags.csv with columns     userId,  movieId, tag,     timestamp
     '''
-    movies = pd.read_csv("../moviedata/movies.csv")
-    ratings = pd.read_csv("../moviedata/ratings.csv")
-    tags = pd.read_csv("../moviedata/tags.csv")
+    movies = pd.read_csv("../movies.csv")
+    ratings = pd.read_csv("../ratings.csv")
+    tags = pd.read_csv("../tags.csv")
     
     # drop duplicate movies
     movies.drop_duplicates("title", inplace=True)
+
+    # lots of movie titles are surrounded by quotation marks, removing these. 
+    movies["title"]=movies["title"].str.replace('"', '')
 
     # connect movie titles with ratings by merging datasets, also saving movies dataset for future cross-references
     merged = movies.merge(ratings, on="movieId")
